@@ -5,16 +5,17 @@ import matplotlib.pyplot as plt
 
 # ==============================================================================
 
-TARGET_NAME = "matrix_serial"
+TARGET_NAME = "matrix_omp"
 PARAM_LABEL = "Потоки"
 SIZES       = [200, 400, 800, 1200, 1600, 2000]
-PARAMS      = [1]
+PARAMS      = [1, 2, 4, 8, 16]
 
 def build_command(binary: str, file_a: str, file_b: str, file_c: str, param: int) -> list:
     """Формирование команды запуска в зависимости от технологии."""
-    return [binary, file_a, file_b, file_c]
+    return [binary, file_a, file_b, file_c, str(param)]
 
 # ==============================================================================
+
 def find_executable(name: str) -> str:
     candidates = [
         os.path.join("build", "Release", f"{name}.exe"),
