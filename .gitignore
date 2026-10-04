@@ -1,0 +1,18 @@
+# Сборка C++
+build/
+bin/
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# Временные текстовые матрицы (данные)
+*.txt
+!CMakeLists.txt
+
+# Python
+__pycache__/
+*.pyc
+
+# Настройки VS Code
+.vscode/
