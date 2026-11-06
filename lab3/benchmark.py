@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 
 # ==============================================================================
 
-TARGET_NAME = "matrix_omp"
-PARAM_LABEL = "Потоки"
+TARGET_NAME = "matrix_mpi"
+PARAM_LABEL = "Процессы"
 SIZES       = [200, 400, 800, 1200, 1600, 2000]
 PARAMS      = [1, 2, 4, 8, 16]
 
 def build_command(binary: str, file_a: str, file_b: str, file_c: str, param: int) -> list:
     """Формирование команды запуска в зависимости от технологии."""
-    return [binary, file_a, file_b, file_c, str(param)]
+    return ["mpiexec", "-n", str(param), binary, file_a, file_b, file_c]
 
 # ==============================================================================
 
