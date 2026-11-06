@@ -95,7 +95,6 @@ else:
         row = f"| {n} | " + " | ".join([f"{results[n][p]:.4f}" for p in PARAMS]) + " |"
         print(row)
 
-    # 1. График времени от размера матрицы (сохраняется)
     plt.figure(figsize=(9, 5))
     for p in PARAMS:
         plt.plot(SIZES, [results[n][p] for n in SIZES], marker='o', label=f'Блок {p}x{p} ({p*p} потоков)')
@@ -108,12 +107,10 @@ else:
     plt.savefig('time_plot.png', dpi=300)
     plt.close()
 
-    # 2. Корректный график: Сравнение производительности конфигураций блоков для N=2000
     max_n = SIZES[-1]
     block_labels = [f'{p}x{p}\n({p*p} потоков)' for p in PARAMS]
     times_n2000 = [results[max_n][p] for p in PARAMS]
 
-    # Расчет GFLOPS: (2 * N^3) / (time * 10^9)
     gflops = [(2 * (max_n ** 3)) / (t * 1e9) for t in times_n2000]
 
     plt.figure(figsize=(8, 5))

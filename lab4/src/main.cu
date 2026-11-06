@@ -5,7 +5,6 @@
 #include <string>
 #include <cuda_runtime.h>
 
-// Макрос проверки ошибок CUDA API
 #define CUDA_CHECK(call) \
     do { \
         cudaError_t err = call; \
@@ -16,7 +15,6 @@
         } \
     } while (0)
 
-// 2D-ядро умножения матриц
 __global__ void matrixMulKernel(const double* A, const double* B, double* C, int n) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -67,22 +65,18 @@ int main(int argc, char* argv[]) {
     fa.close();
     fb.close();
 
-    // Выделение памяти на видеокарте (Device)
     double *d_a = nullptr, *d_b = nullptr, *d_c = nullptr;
     CUDA_CHECK(cudaMalloc(&d_a, size_bytes));
     CUDA_CHECK(cudaMalloc(&d_b, size_bytes));
     CUDA_CHECK(cudaMalloc(&d_c, size_bytes));
 
-    // Копирование матриц Host -> Device
     CUDA_CHECK(cudaMemcpy(d_a, h_a.data(), size_bytes, cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), size_bytes, cudaMemcpyHostToDevice));
 
-    // Конфигурация 2D-сетки и блоков
     dim3 block(block_dim, block_dim);
     dim3 grid((static_cast<unsigned int>(n) + block.x - 1) / block.x,
               (static_cast<unsigned int>(n) + block.y - 1) / block.y);
 
-    // Замер времени чистого выполнения ядра с помощью CUDA Events
     cudaEvent_t start, stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
@@ -96,17 +90,14 @@ int main(int argc, char* argv[]) {
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double elapsed = ms / 1000.0;
 
-    // Копирование результата Device -> Host
     CUDA_CHECK(cudaMemcpy(h_c.data(), d_c, size_bytes, cudaMemcpyDeviceToHost));
 
-    // Освобождение памяти GPU
     CUDA_CHECK(cudaFree(d_a));
     CUDA_CHECK(cudaFree(d_b));
     CUDA_CHECK(cudaFree(d_c));
     CUDA_CHECK(cudaEventDestroy(start));
     CUDA_CHECK(cudaEventDestroy(stop));
 
-    // Запись результатов
     std::ofstream fout(path_out);
     if (!fout.is_open()) {
         std::cerr << "Ошибка создания файла вывода\n";
