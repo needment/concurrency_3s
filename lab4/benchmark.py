@@ -95,32 +95,40 @@ else:
         row = f"| {n} | " + " | ".join([f"{results[n][p]:.4f}" for p in PARAMS]) + " |"
         print(row)
 
+    # 1. График времени от размера матрицы (сохраняется)
     plt.figure(figsize=(9, 5))
     for p in PARAMS:
-        plt.plot(SIZES, [results[n][p] for n in SIZES], marker='o', label=f'{p} {PARAM_LABEL}')
-    plt.title(f'Сравнение времени работы ({TARGET_NAME})')
+        plt.plot(SIZES, [results[n][p] for n in SIZES], marker='o', label=f'Блок {p}x{p} ({p*p} потоков)')
+    plt.title('Время умножения матриц на GPU (Tesla T4)')
     plt.xlabel('Размер матрицы N')
-    plt.ylabel('Время (сек)')
+    plt.ylabel('Время ядра CUDA (сек)')
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     plt.tight_layout()
     plt.savefig('time_plot.png', dpi=300)
     plt.close()
 
+    # 2. Корректный график: Сравнение производительности конфигураций блоков для N=2000
     max_n = SIZES[-1]
-    base_t = results[max_n][PARAMS[0]]
-    speedups = [base_t / results[max_n][p] for p in PARAMS]
+    block_labels = [f'{p}x{p}\n({p*p} потоков)' for p in PARAMS]
+    times_n2000 = [results[max_n][p] for p in PARAMS]
+
+    # Расчет GFLOPS: (2 * N^3) / (time * 10^9)
+    gflops = [(2 * (max_n ** 3)) / (t * 1e9) for t in times_n2000]
 
     plt.figure(figsize=(8, 5))
-    plt.plot(PARAMS, speedups, marker='s', color='r', label='Экспериментальное ускорение')
-    plt.plot(PARAMS, PARAMS, linestyle='--', color='gray', label='Идеальное ускорение')
-    plt.title(f'Ускорение S({PARAM_LABEL}) для матрицы {max_n}x{max_n}')
-    plt.xlabel(PARAM_LABEL)
-    plt.ylabel('S = T1 / Tp')
-    plt.grid(True, linestyle='--', alpha=0.7)
-    plt.legend()
+    bars = plt.bar(block_labels, gflops, color=['#1f77b4', '#2ca02c', '#d62728'], width=0.5)
+    plt.title(f'Производительность ядра CUDA для матрицы {max_n}x{max_n}')
+    plt.xlabel('Конфигурация блока')
+    plt.ylabel('Производительность (GFLOPS)')
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    for bar in bars:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2.0, yval + 5, f'{yval:.1f} GFLOPS', ha='center', va='bottom')
+
     plt.tight_layout()
-    plt.savefig('speedup_plot.png', dpi=300)
+    plt.savefig('block_performance.png', dpi=300)
     plt.close()
 
-    print("\nГрафики сохранены: time_plot.png и speedup_plot.png")
+    print("\nСформированы корректные графики: time_plot.png и block_performance.png")
