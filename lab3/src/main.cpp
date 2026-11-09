@@ -2,6 +2,8 @@
 #include <vector>
 #include <fstream>
 #include <iomanip>
+#include <string>
+#include <cstdint>
 #include <mpi.h>
 
 int main(int argc, char* argv[]) {
@@ -23,19 +25,20 @@ int main(int argc, char* argv[]) {
     std::string path_b = argv[2];
     std::string path_out = argv[3];
 
-    size_t n = 0;
+    uint64_t n = 0;
     std::vector<double> a;
     std::vector<double> b;
     std::vector<double> c;
 
     if (rank == 0) {
-        std::ifstream fa(path_a), fb(path_b);
+        std::ifstream fa(path_a);
+        std::ifstream fb(path_b);
         if (!fa.is_open() || !fb.is_open()) {
             std::cerr << "Ошибка: Не удалось открыть входные файлы\n";
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
 
-        size_t n_b;
+        uint64_t n_b;
         fa >> n;
         fb >> n_b;
 
@@ -55,7 +58,8 @@ int main(int argc, char* argv[]) {
         fb.close();
     }
 
-    MPI_Bcast(&n, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
+    // Рассылка размера N (C++11 / MPI-2 совместимый тип)
+    MPI_Bcast(&n, 1, MPI_UNSIGNED_LONG_LONG, 0, MPI_COMM_WORLD);
 
     if (rank != 0) {
         b.resize(n * n);
@@ -106,26 +110,28 @@ int main(int argc, char* argv[]) {
 
     if (rank == 0) {
         std::ofstream fout(path_out);
-        if (!fout.is_open()) {
-            std::cerr << "Ошибка: Не удалось создать файл вывода\n";
-            MPI_Abort(MPI_COMM_WORLD, 1);
-        }
-
-        fout << n << "\n";
-        fout << std::fixed << std::setprecision(6);
-        fout << "# Время (сек): " << elapsed << "\n";
-        fout << "# Процессов: " << num_procs << "\n";
-
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = 0; j < n; ++j) {
-                fout << c[i * n + j] << (j + 1 == n ? "" : " ");
+        if (fout.is_open()) {
+            fout << n << "\n";
+            fout << std::fixed << std::setprecision(6);
+            fout << "# Время (сек): " << elapsed << "\n";
+            for (size_t i = 0; i < n; ++i) {
+                for (size_t j = 0; j < n; ++j) {
+                    fout << c[i * n + j] << (j + 1 == n ? "" : " ");
+                }
+                fout << "\n";
             }
-            fout << "\n";
+            fout.close();
         }
-        fout.close();
 
-        std::cout << "Размер: " << n << "x" << n << " | Процессов: " << num_procs 
-                  << " | Время: " << elapsed << " сек.\n";
+        double ops = 2.0 * static_cast<double>(n) * static_cast<double>(n) * static_cast<double>(n);
+        double gops = (elapsed > 0.0) ? (ops / elapsed / 1e9) : 0.0;
+
+        std::cout << "lab3,"
+                  << n << ","
+                  << num_procs << ","
+                  << std::fixed << std::setprecision(6) << elapsed << ","
+                  << std::scientific << std::setprecision(2) << ops << ","
+                  << std::fixed << std::setprecision(4) << gops << "\n";
     }
 
     MPI_Finalize();
