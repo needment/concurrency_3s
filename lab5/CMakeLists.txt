@@ -10,5 +10,11 @@ else()
     add_compile_options(-O3 -pthread)
 endif()
 
-file(GLOB SOURCES "src/*.cpp")
-add_executable(mandelbrot ${SOURCES})
+include_directories(common src)
+
+add_executable(mandelbrot
+    src/main.cpp
+    src/mandelbrotSerial.cpp
+    src/mandelbrotThread.cpp
+    common/ppm.cpp
+)
